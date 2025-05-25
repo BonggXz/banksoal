@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Webbank Soal</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
+    header { background: #2d8cf0; color: #fff; padding: 1rem; text-align: center; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .mapel-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between; }
+    .mapel-card h2 { font-size: 1.1rem; margin-bottom: .5rem; color: #333; }
+    .mapel-card p { font-size: .9rem; margin: .2rem 0; color: #555; }
+    .btn { display: inline-block; margin-top: 1rem; padding: .6rem 1rem; background: #2d8cf0; color: #fff; text-decoration: none; border-radius: 4px; text-align: center; }
+    .btn:hover { background: #1a6fb3; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Daftar Ujian / Mapel</h1>
+  </header>
+  <main id="mapel-list">
+    <!-- Kartu mapel akan di-inject di sini -->
+  </main>
+
+  <script>
+    async function loadMapel() {
+      const apiUrl = 'https://cbtadmin.bimasoft.workers.dev/?cbtindex=49&_=/datatest';
+      try {
+        const res = await fetch(apiUrl);
+        const json = await res.json();
+        const mapelObj = json.mapel || {};
+        const container = document.getElementById('mapel-list');
+
+        Object.values(mapelObj).forEach(m => {
+          const card = document.createElement('div');
+          card.className = 'mapel-card';
+
+          card.innerHTML = `
+            <h2>${m.nama}</h2>
+            <p><strong>Kode:</strong> ${m.kode}</p>
+            <p><strong>Tanggal:</strong> ${m.tanggal} &bull; <strong>Waktu:</strong> ${m.waktu} menit</p>
+            <p><strong>Jumlah Soal:</strong> ${m.jumlahsoal}</p>
+            <a class="btn" href="soal.html?mapel=${encodeURIComponent(m.kode)}">Data Soal</a>
+          `;
+
+          container.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error('Gagal load mapel:', err);
+        document.getElementById('mapel-list').innerText = 'Error memuat data mapel.';
+      }
+    }
+
+    loadMapel();
+  </script>
+</body>
+</html>

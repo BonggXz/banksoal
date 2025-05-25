@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soal • Webbank</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4a90e2;
+      --light: #f5f7fa;
+      --bg: #edf2f7;
+      --card: #ffffff;
+      --text: #333;
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1.2rem;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    header a {
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+      display: inline-block;
+      margin-top: 0.5rem;
+      text-decoration: none;
+    }
+    header a:hover { text-decoration: underline; }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+    }
+    .card-header {
+      background: var(--light);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .card-header h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .card-body {
+      padding: 1.5rem;
+    }
+    .question {
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .option {
+      background: var(--light);
+      border-radius: 6px;
+      padding: 0.8rem;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .option:hover {
+      background: #e1edff;
+    }
+    .option input {
+      margin-right: 0.6rem;
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+    .option label {
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    @media (max-width: 600px) {
+      .options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="judul-mapel">Soal</h1>
+    <a href="index.html">← Kembali ke Daftar Mapel</a>
+  </header>
+
+  <main id="soal-list">
+    <!-- Soal akan di-render di sini -->
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const kodeMapel = params.get('mapel') || 'XI-B.INDONESIA-ASAT-25';
+    document.getElementById('judul-mapel').textContent = `Soal: ${kodeMapel}`;
+
+    const firestoreUrl =
+      `https://firestore.googleapis.com/v1/projects/cbt-00/databases/(default)` +
+      `/documents/49/soal/soal/${encodeURIComponent(kodeMapel)}`;
+
+    async function fetchSoal() {
+      try {
+        const res = await fetch(firestoreUrl);
+        const data = await res.json();
+        const soalArr = data.fields.soal.arrayValue.values;
+        const container = document.getElementById('soal-list');
+
+        soalArr.forEach((item, i) => {
+          const { soal, options } = item.mapValue.fields;
+          const textSoal = soal.stringValue;
+          const opts = options.arrayValue.values.map(v => v.mapValue.fields);
+          const multiple = /pilihlah\s*dua|lebih dari satu/i.test(textSoal);
+
+          // Card wrapper
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          // Card Header
+          const head = document.createElement('div');
+          head.className = 'card-header';
+          head.innerHTML = `<h2>Soal ${i + 1}</h2>`;
+
+          // Card Body
+          const body = document.createElement('div');
+          body.className = 'card-body';
+          body.innerHTML = `<p class="question">${textSoal}</p>`;
+
+          // Options container
+          const optsContainer = document.createElement('div');
+          optsContainer.className = 'options';
+
+          opts.forEach(o => {
+            const code = o.optionasli.stringValue;
+            const text = o.answer.stringValue;
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerHTML = `
+              <input type="${multiple ? 'checkbox' : 'radio'}"
+                     name="soal_${i}" id="q${i}_${code}" value="${code}">
+              <label for="q${i}_${code}"><strong>${code}.</strong> ${text}</label>
+            `;
+            optsContainer.appendChild(div);
+          });
+
+          // Assemble
+          body.appendChild(optsContainer);
+          card.append(head, body);
+          container.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('soal-list')
+          .textContent = 'Gagal memuat soal. Silakan coba lagi nanti.';
+      }
+    }
+
+    fetchSoal();
+  </script>
+</body>
+</html>
